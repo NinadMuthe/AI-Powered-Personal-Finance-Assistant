@@ -73,6 +73,24 @@ def import_transactions_from_csv(db: Session, csv_content: str) -> int:
 
     return len(transactions)
 
+
+def create_transactions(
+    db: Session,
+    transactions: list[TransactionCreate],
+) -> int:
+    """Save a validated batch of transactions atomically."""
+    if not transactions:
+        raise ValueError("At least one transaction is required.")
+
+    try:
+        db.add_all(Transaction(**transaction.model_dump()) for transaction in transactions)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return len(transactions)
+
 def get_transaction(db: Session, transaction_id: int) -> Transaction | None:
     return db.get(Transaction, transaction_id)
 

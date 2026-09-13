@@ -2,8 +2,14 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
 from backend.app.db.session import get_db
-from backend.app.schemas.transaction import TransactionCreate, TransactionResponse
+from backend.app.schemas.transaction import (
+    SMSImportRequest,
+    TransactionCreate,
+    TransactionResponse,
+)
+from backend.app.services.sms_parser import SMSParseError, parse_sms_message
 from backend.app.services.transaction import (
+    create_transactions,
     create_transaction,
     delete_transaction,
     get_transaction,
@@ -50,6 +56,30 @@ async def import_transactions_csv(
     try:
         imported_count = import_transactions_from_csv(db, csv_content)
     except TransactionCSVImportError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    return {"imported_count": imported_count}
+
+
+@router.post("/import/sms", status_code=status.HTTP_201_CREATED)
+def import_transactions_sms(
+    payload: SMSImportRequest,
+    db: Session = Depends(get_db),
+):
+    """Extract supported synthetic banking SMS messages into transactions."""
+    parsed_transactions = []
+    for message_number, message in enumerate(payload.messages, start=1):
+        try:
+            parsed_transactions.append(parse_sms_message(message))
+        except SMSParseError as error:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Could not parse SMS message {message_number}: {error}.",
+            ) from error
+
+    try:
+        imported_count = create_transactions(db, parsed_transactions)
+    except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
     return {"imported_count": imported_count}

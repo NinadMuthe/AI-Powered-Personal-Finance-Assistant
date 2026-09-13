@@ -16,6 +16,15 @@ class TransactionCreate(TransactionBase):
     pass
 
 
+class SMSMessage(BaseModel):
+    message: str
+    received_at: datetime
+
+
+class SMSImportRequest(BaseModel):
+    messages: list[SMSMessage]
+
+
 class TransactionResponse(TransactionBase):
     id: int
 

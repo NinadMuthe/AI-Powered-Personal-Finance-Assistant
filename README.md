@@ -41,3 +41,10 @@ amount,transaction_type,category,description,transaction_date,source
 ```
 
 A sample file is available at `backend/data/synthetic_transactions.csv`.
+
+## Synthetic SMS import
+
+`POST /transactions/import/sms` accepts synthetic banking-style SMS messages
+and their received timestamps. The parser extracts an INR amount, whether the
+message is income or expense, a merchant description, and a basic category.
+All messages must parse successfully before the batch is saved.
