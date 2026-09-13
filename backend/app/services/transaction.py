@@ -15,3 +15,35 @@ def create_transaction(db: Session, transaction: TransactionCreate) -> Transacti
 
 def get_transactions(db: Session) -> list[Transaction]:
     return list(db.scalars(select(Transaction)).all())
+
+def get_transaction(db: Session, transaction_id: int) -> Transaction | None:
+    return db.get(Transaction, transaction_id)
+
+def update_transaction(
+    db: Session,
+    transaction_id: int,
+    transaction: TransactionCreate,
+) -> Transaction | None:
+    db_transaction = db.get(Transaction, transaction_id)
+
+    if db_transaction is None:
+        return None
+
+    for field, value in transaction.model_dump().items():
+        setattr(db_transaction, field, value)
+
+    db.commit()
+    db.refresh(db_transaction)
+
+    return db_transaction
+
+def delete_transaction(db: Session, transaction_id: int) -> bool:
+    db_transaction = db.get(Transaction, transaction_id)
+
+    if db_transaction is None:
+        return False
+
+    db.delete(db_transaction)
+    db.commit()
+
+    return True
