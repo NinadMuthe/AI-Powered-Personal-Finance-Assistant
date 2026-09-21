@@ -16,3 +16,5 @@ __pycache__/
 node_modules/
 
 backend/data/sample_receipt.png
+
+backend/data/processed_receipt.png
